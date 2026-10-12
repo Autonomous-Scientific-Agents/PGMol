@@ -11,9 +11,14 @@ coordinates, renders an interactive 3D molecule, and visualizes detected
 symmetry axes and mirror planes. Analysis runs entirely in the browser; no
 coordinates are uploaded to a server.
 
-After GitHub Pages is enabled with **GitHub Actions** as its source, pushes to
-`main` deploy the site using [the Pages workflow](.github/workflows/pages.yml).
-For local development, serve the repository root and open `/docs/`:
+The live app is available at <https://autonomous-scientific-agents.github.io/PGMol/>.
+Its [interactive development trace](https://autonomous-scientific-agents.github.io/PGMol/agent-traces/pgmol-point-group-analyzer/replay.html)
+records the implementation, debugging, reviews, and deployment. Sanitized trace
+source and metadata are documented in [`agent-traces/`](agent-traces/).
+
+GitHub Pages uses **GitHub Actions** as its source; pushes to `main` deploy the
+site using [the Pages workflow](.github/workflows/pages.yml). For local
+development, serve the repository root and open `/docs/`:
 
 ```bash
 python -m http.server 8000
