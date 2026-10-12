@@ -12,7 +12,8 @@ Array = npt.NDArray[np.float64]
 _IDENTITY = np.eye(3)
 
 
-def _perfect_matching(adjacency: list[list[int]]) -> bool:
+def _perfect_matching(adjacency: list[list[int]]) -> list[int] | None:
+    """Return one row-to-column perfect matching, if one exists."""
     assigned: dict[int, int] = {}
 
     def augment(row: int, seen: set[int]) -> bool:
@@ -25,30 +26,52 @@ def _perfect_matching(adjacency: list[list[int]]) -> bool:
                 return True
         return False
 
-    return all(augment(row, set()) for row in range(len(adjacency)))
+    if not all(augment(row, set()) for row in range(len(adjacency))):
+        return None
+    result = [0] * len(adjacency)
+    for column, row in assigned.items():
+        result[row] = column
+    return result
+
+
+def _matching_permutation(
+    symbols: Sequence[str], coordinates: Array, operation: Array, tolerance: float
+) -> tuple[int, ...] | None:
+    """Find a species-preserving atom permutation induced by an operation."""
+    transformed = coordinates @ operation.T
+    limit2 = tolerance * tolerance
+    permutation = [-1] * len(symbols)
+    for species in sorted(set(symbols)):
+        indices = np.asarray(
+            [i for i, name in enumerate(symbols) if name == species], dtype=int
+        )
+        differences = transformed[indices, None, :] - coordinates[indices, :]
+        distances2 = np.einsum("ijk,ijk->ij", differences, differences)
+
+        # Symmetry-equivalent atoms are normally farther apart than tolerance.
+        # This vectorized path avoids graph matching in that common case.
+        nearest = np.argmin(distances2, axis=1)
+        if np.all(distances2[np.arange(len(indices)), nearest] <= limit2) and len(
+            np.unique(nearest)
+        ) == len(indices):
+            local_match = nearest.tolist()
+        else:
+            adjacency = [np.flatnonzero(row <= limit2).tolist() for row in distances2]
+            if any(not choices for choices in adjacency):
+                return None
+            local_match = _perfect_matching(adjacency)
+            if local_match is None:
+                return None
+        for row, column in enumerate(local_match):
+            permutation[int(indices[row])] = int(indices[column])
+    return tuple(permutation)
 
 
 def _has_matching(
     symbols: Sequence[str], coordinates: Array, operation: Array, tolerance: float
 ) -> bool:
     """Test for a species-preserving perfect matching after an operation."""
-    transformed = coordinates @ operation.T
-    limit2 = tolerance * tolerance
-    for species in set(symbols):
-        indices = [i for i, name in enumerate(symbols) if name == species]
-        adjacency = [
-            [
-                j
-                for j in indices
-                if np.sum((transformed[i] - coordinates[j]) ** 2) <= limit2
-            ]
-            for i in indices
-        ]
-        if any(not choices for choices in adjacency) or not _perfect_matching(
-            adjacency
-        ):
-            return False
-    return True
+    return _matching_permutation(symbols, coordinates, operation, tolerance) is not None
 
 
 def _frame(first: Array, second: Array) -> Array:
@@ -57,10 +80,6 @@ def _frame(first: Array, second: Array) -> Array:
     two = residual / np.linalg.norm(residual)
     three = np.cross(one, two)
     return np.column_stack((one, two, three))
-
-
-def _operation_key(operation: Array) -> tuple[int, ...]:
-    return tuple(np.rint(operation.ravel() * 10**7).astype(int))
 
 
 def _discover_operations(
@@ -80,7 +99,7 @@ def _discover_operations(
 
     first_index, second_index = best
     source = _frame(coordinates[first_index], coordinates[second_index])
-    operations: dict[tuple[int, ...], Array] = {}
+    operations: dict[tuple[int, ...], tuple[float, Array]] = {}
     radial_slack = 2.0 * tolerance
     for i, first in enumerate(coordinates):
         if symbols[i] != symbols[first_index]:
@@ -103,10 +122,26 @@ def _discover_operations(
             target = _frame(first, second)
             for handedness in (1.0, -1.0):
                 operation = target @ np.diag((1.0, 1.0, handedness)) @ source.T
-                if _has_matching(symbols, coordinates, operation, tolerance):
-                    operations[_operation_key(operation)] = operation
-    operations.setdefault(_operation_key(_IDENTITY), _IDENTITY)
-    return list(operations.values())
+                permutation = _matching_permutation(
+                    symbols, coordinates, operation, tolerance
+                )
+                if permutation is not None:
+                    key = (*permutation, 1 if handedness > 0.0 else -1)
+                    transformed = coordinates @ operation.T
+                    displacement = float(
+                        np.max(
+                            np.linalg.norm(
+                                transformed - coordinates[np.asarray(permutation)],
+                                axis=1,
+                            )
+                        )
+                    )
+                    previous = operations.get(key)
+                    if previous is None or displacement < previous[0]:
+                        operations[key] = (displacement, operation)
+    identity = (*range(len(symbols)), 1)
+    operations[identity] = (0.0, _IDENTITY)
+    return [operation for _, operation in operations.values()]
 
 
 def _rotation_order(operation: Array) -> int:

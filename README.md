@@ -4,6 +4,22 @@ PGMol determines a molecule's Schoenflies point group from element identities
 and Cartesian coordinates. It matches geometric symmetry operations directly;
 filenames, formulas, and bonding assumptions are not used.
 
+## Browser app
+
+The static browser interface in [`docs/`](docs/) accepts uploaded or pasted XYZ
+coordinates, renders an interactive 3D molecule, and visualizes detected
+symmetry axes and mirror planes. Analysis runs entirely in the browser; no
+coordinates are uploaded to a server.
+
+After GitHub Pages is enabled with **GitHub Actions** as its source, pushes to
+`main` deploy the site using [the Pages workflow](.github/workflows/pages.yml).
+For local development, serve the repository root and open `/docs/`:
+
+```bash
+python -m http.server 8000
+# Open http://localhost:8000/docs/
+```
+
 ## Install
 
 PGMol requires Python 3.10+ and NumPy.
@@ -66,6 +82,7 @@ frames are not supported and produce a useful error.
 ruff check .
 ruff format --check .
 pytest --cov=pgmol --cov-branch --cov-report=term-missing
+node tests/web_test.mjs
 ```
 
 The test suite checks every `core_xyz` fixture through the public API as well

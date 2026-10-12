@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Analyze molecular point-group symmetry privately in your browser.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>PGMol — Molecular Symmetry, Revealed</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <noscript><div class="noscript">PGMol requires JavaScript to analyze and render molecular structures.</div></noscript>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="PGMol home"><span class="mark">PG</span><span>Mol</span></a>
+    <div class="privacy"><span></span> Local analysis · your structure never leaves this browser</div>
+    <a class="github" href="https://github.com/Autonomous-Scientific-Agents/PGMol">GitHub ↗</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">MOLECULAR POINT-GROUP ANALYZER</p>
+      <h1>Every molecule has<br>a hidden <em>order.</em></h1>
+      <p class="lede">Drop in Cartesian coordinates. PGMol discovers the rotations, reflections, and inversions that define your molecule—entirely in your browser.</p>
+    </section>
+
+    <section class="workbench" aria-label="Symmetry workbench">
+      <aside class="input-panel">
+        <div class="panel-heading"><span>01</span><h2>Structure</h2></div>
+        <label id="dropzone" class="dropzone" for="file-input">
+          <input id="file-input" type="file" accept=".xyz,chemical/x-xyz">
+          <span class="drop-icon">↓</span>
+          <strong>Drop an XYZ file</strong>
+          <small>or click to browse</small>
+        </label>
+        <div class="or"><span>OR PASTE COORDINATES</span></div>
+        <textarea id="xyz-input" spellcheck="false" aria-label="XYZ coordinates">3
+water · H₂O
+O   0.000   0.000   0.000
+H   0.757   0.000   0.587
+H  -0.757   0.000   0.587</textarea>
+        <div class="settings-row">
+          <label for="tolerance">Tolerance <span>Å</span></label>
+          <input id="tolerance" type="number" min="0.001" step="0.01" value="0.10">
+        </div>
+        <button id="analyze" class="analyze">Analyze symmetry <span>→</span></button>
+        <p id="error" class="error" role="alert"></p>
+      </aside>
+
+      <section class="viewer-panel">
+        <div class="viewer-toolbar">
+          <div><span class="status-dot"></span><span id="molecule-name">water · H₂O</span></div>
+          <div class="viewer-actions"><button id="reset-view" title="Reset view">↻</button><button id="fullscreen" title="Fullscreen">⛶</button></div>
+        </div>
+        <canvas id="viewer" aria-label="Interactive three-dimensional molecular viewer"></canvas>
+        <div class="drag-hint">DRAG TO ROTATE · SCROLL TO ZOOM</div>
+        <div class="axis-key"><span class="x">X</span><span class="y">Y</span><span class="z">Z</span></div>
+      </section>
+
+      <aside class="result-panel">
+        <div class="panel-heading"><span>02</span><h2>Point group</h2></div>
+        <div class="point-group-card">
+          <span>SCHOENFLIES SYMBOL</span>
+          <strong id="point-group">C<sub>2v</sub></strong>
+          <p id="group-description">Twofold rotation with two vertical mirror planes</p>
+        </div>
+        <div class="summary-grid">
+          <div><span>Atoms</span><strong id="atom-count">3</strong></div>
+          <div><span>Operations</span><strong id="operation-count">4</strong></div>
+        </div>
+        <div class="operations-heading"><h3>Symmetry operations</h3><span id="operation-badge">4 found</span></div>
+        <div id="operations" class="operations"></div>
+      </aside>
+    </section>
+
+    <section class="how-it-works">
+      <div><p class="eyebrow">HOW IT WORKS</p><h2>Geometry, not guesswork.</h2></div>
+      <ol>
+        <li><span>01</span><div><strong>Center</strong><p>Translate the molecular centroid to the origin.</p></div></li>
+        <li><span>02</span><div><strong>Transform</strong><p>Generate candidate orthogonal operations from atomic frames.</p></div></li>
+        <li><span>03</span><div><strong>Match</strong><p>Verify one-to-one, element-aware atomic correspondence.</p></div></li>
+        <li><span>04</span><div><strong>Classify</strong><p>Map the complete operation set to its Schoenflies group.</p></div></li>
+      </ol>
+    </section>
+  </main>
+  <footer><span>PGMol · Open-source molecular symmetry</span><span>Coordinates stay on your device</span></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

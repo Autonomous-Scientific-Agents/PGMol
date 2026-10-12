@@ -23,3 +23,10 @@ jobs:
       - run: ruff format --check .
       - run: pytest --cov=pgmol --cov-branch --cov-report=term-missing
       - run: pgmol core_xyz/H2O_C2v.xyz
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check docs/app.js
+      - run: node --check docs/pgmol-core.mjs
+      - run: node tests/site_smoke.mjs
+      - run: node tests/web_test.mjs
